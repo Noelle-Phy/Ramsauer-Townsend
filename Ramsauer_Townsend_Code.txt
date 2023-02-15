@@ -1,0 +1,95 @@
+import numpy as np
+import statistics
+import matplotlib.pyplot as plt
+
+IpvVanf = np.loadtxt("Plate_Current_v_Accelerating_Voltage.txt", dtype = float, skiprows = 1) ##Creates a 141x2 matrix with data from the file
+Vanf = [] ##Accelerating Voltage with no freezing
+Ipnf = [] ##Plate Current with no freezing
+##Empty arrays for the data to be put into
+for i in range(len(IpvVanf)): ##For loop which puts the data from the matrix into the empty arrays above
+    Vanf = np.append(Vanf, IpvVanf[i][0])
+    Ipnf = np.append(Ipnf, IpvVanf[i][1])
+IsvVanf = np.loadtxt("Shield_Current_v_Accelerating_Voltage.txt", dtype = float, skiprows = 1) ##Everything below does the same thing as above
+Isnf = [] ##Shield Current with no freezing
+for i in range(len(IsvVanf)):
+    Isnf = np.append(Isnf, IsvVanf[i][1])
+IpvVa = np.loadtxt("Plate_Current_v_Accelerating_Voltage_FrozenXe.txt", dtype = float, skiprows = 1)
+Va = [] ##Accelerating Voltage with freezing
+Ip = [] ##Plate Current with freezing
+for i in range(len(IpvVa)):
+    Va = np.append(Va, IpvVa[i][0])
+    Ip = np.append(Ip, IpvVa[i][1])
+IsvVa = np.loadtxt("Shield_Current_v_Accelerating_Voltage.txt", dtype = float, skiprows = 1)
+Is = [] ##Shield Current with freezing
+for i in range(len(IsvVa)):
+    Is = np.append(Is, IsvVa[i][1])
+
+plt.plot(Vanf, -Ipnf) ##Code to Plot the Plate Current v Accelerating Voltage without the xenon frozen out
+plt.xlabel("Accelerating Voltage")
+plt.ylabel("Plate Current")
+plt.savefig("Plate_Current_v_Accelerating_Voltage_without_Frozen_Xenon.png", format = 'png')
+plt.show()
+plt.close()
+
+plt.plot(Va, -Ip) ##Code to plot the Plate Current v Accelerating Voltage with the xenon frozen out
+plt.xlabel("Accelerating Voltage (V)")
+plt.ylabel("Plate Current (A)")
+plt.savefig("Plate_Current_v_Accelerating_Voltage_with_Frozen_Xenon.png", format = 'png')
+plt.show()
+plt.close()
+
+plt.plot(Vanf, -Ipnf, label = 'Xenon not Frozen') ##Code to plot the Plate Current v Accelerating Voltage with and without freezing
+plt.plot(Va, -Ip, color = 'black', label = 'Xenon Frozen')
+plt.xlabel("Accelerating Voltage (V)")
+plt.ylabel("Plate Current (I)")
+plt.xlim(0.5, 4)
+plt.ylim(-0.00001, 0.00006)
+plt.legend()
+plt.savefig("Plate_Current_v_Accelerating_Voltage_with_and_without_Frozen_Xenon.png", format = 'png')
+plt.show()
+plt.close()
+
+Isplot = [] ##Code to plot the probability of scattering based on our measurements
+Ipplot = []
+for i in range(len(Ipnf)):
+    Isplot = np.append(Isplot, Is[i]) ##Reducing the number of elements in the frozen xenon data so that the arrays are of the same size
+    Ipplot = np.append(Ipplot, Ip[i])
+scatter = []
+for i in range(len(Ipnf)):
+    scatter = np.append(scatter,  1 - ((Ipnf[i] * Isplot[i])/(Isnf[i] * Isplot[i]))) ##Calculating the Probability of scattering at each voltage
+V_c = []
+for i in range(len(Vanf)):
+    V_c = np.append(V_c, np.sqrt(Vanf[i] - 0.4)) ##Changing our voltage potentials to momentum values
+plt.plot(V_c, scatter)
+plt.xlabel("Electron Momentum (Sqrt(Volts))")
+plt.ylabel("Probability of Scattering")
+plt.xlim(1, V_c[140])
+plt.ylim(0.75, 1)
+plt.savefig("Probability_of_Electron_Scattering_v_Electron_Momentum.png", format = 'png')
+plt.show()
+
+FlatIpnf = [] ##Code to get the standard deviation of the flat part of the plate current graph
+for i in range(46):
+    FlatIpnf = np.append(FlatIpnf, Ipnf[i])
+sigmaFIpnf = statistics.stdev(FlatIpnf)
+sigdevFIpnf = (3 * sigmaFIpnf)
+meanFIpnf = statistics.mean(FlatIpnf)
+meandevIpnf = sigmaFIpnf/(np.sqrt(46))
+deviateIpnf = []
+for i in range(len(Ipnf)): ##Code to obtain the point where the graph begins to significantly deviate from being just 0
+    if (np.abs(Ipnf[i]) > np.abs(Ipnf[i-1]) + sigdevFIpnf):
+        deviateIpnf = np.append(deviateIpnf, Vanf[i])
+print(deviateIpnf)
+
+FlatIp = [] ##Same code as above, but for the frozen xenon
+for i in range(46):
+    FlatIp = np.append(FlatIp, Ip[i])
+sigmaFIp = statistics.stdev(FlatIp)
+sigdevFIp = (3 * sigmaFIp)
+meanFIp = statistics.mean(FlatIp)
+meandevIp = sigmaFIp/(np.sqrt(46))
+deviateIp = []
+for i in range(len(Ip)):
+    if (np.abs(Ip[i]) > np.abs(Ip[i-1]) + sigdevFIp):
+        deviateIp = np.append(deviateIp, Va[i])
+print(deviateIp)
